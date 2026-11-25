@@ -5,9 +5,9 @@ import {
   initializeApp, initializeAuth, browserSessionPersistence, signInWithEmailAndPassword, signOut, onAuthStateChanged,
   updatePassword, EmailAuthProvider, reauthenticateWithCredential, connectAuthEmulator,
   getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc,
-} from './firebase.js?v=1.0';
+} from './firebase.js?v=1.1';
 
-const VERSION = '1.0'; // při změně uprav i ?v= v index.html (3×) a v importu výše
+const VERSION = '1.1'; // při změně uprav i ?v= v index.html (3×) a v importu výše
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyA3zzb5ZmReIpOK5tq6jfiIC_EF-3IId6A', authDomain: 'flashcards-663fd.firebaseapp.com', projectId: 'flashcards-663fd',
   storageBucket: 'flashcards-663fd.firebasestorage.app', messagingSenderId: '804475670634', appId: '1:804475670634:web:6f851aa49f3909c613ba13',
@@ -46,6 +46,8 @@ const ICONS = {
   plane: '<path d="M10.5 13.5 4 11.3l1.4-1.4 7 .7 4.3-4.3a1.9 1.9 0 0 1 2.7 2.7l-4.3 4.3.7 7-1.4 1.4-2.2-6.5-3.4 3.4.3 2.2-1.1 1.1-1.5-3-3-1.5 1.1-1.1 2.2.3z"/>',
   chart: '<path d="M4 20.5h16.5"/><rect x="5.5" y="12" width="3" height="6" rx="1"/><rect x="10.8" y="7.5" width="3" height="10.5" rx="1"/><rect x="16" y="4" width="3" height="14" rx="1"/>',
   link: '<path d="M10 14a4.2 4.2 0 0 0 6 0l3-3a4.2 4.2 0 0 0-6-6l-1 1"/><path d="M14 10a4.2 4.2 0 0 0-6 0l-3 3a4.2 4.2 0 0 0 6 6l1-1"/>',
+  cards: '<rect x="7.5" y="6.5" width="13" height="14" rx="2.5"/><path d="M16.5 6.5V5.8a2.3 2.3 0 0 0-2.7-2.2l-8.1 1.5a2.3 2.3 0 0 0-1.8 2.7l2 10.4"/><path d="M11 12h6M11 15.5h4"/>',
+  gamepad: '<path d="M7.5 7h9a5 5 0 0 1 4.9 6l-.8 4.2a2.3 2.3 0 0 1-4 1L14.7 16H9.3l-1.9 2.2a2.3 2.3 0 0 1-4-1L2.6 13a5 5 0 0 1 4.9-6z"/><path d="M8 10v4M6 12h4"/><circle cx="15.5" cy="11" r=".9" fill="currentColor"/><circle cx="17.5" cy="13.5" r=".9" fill="currentColor"/>',
   heart: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/>',
   // ikonky rozhraní
   lock: '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/>',
@@ -57,12 +59,16 @@ const ICONS = {
 const icon = (name, cls = 'ico') =>
   `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ICONS.folder}</svg>`;
 
-/* ---------- ukázkové dlaždice (zatím za nimi nic není) ---------- */
+/* ---------- dlaždice: Flashcards a Hry vedou na web, ostatní jsou zatím jen ukázka ---------- */
 const COLORS = {
   orange: '#ea6a1f', red: '#dc3545', pink: '#d63384', purple: '#7c4ddb', indigo: '#4f46e5', blue: '#2563eb',
   sky: '#0284c7', teal: '#0f8f83', green: '#16a34a', olive: '#5f8f0f', brown: '#9a5b13', slate: '#475569',
 };
+// Když se tenhle seznam změní, zvyš TILES_VERSION: uložené dlaždice v databázi se pak nahradí novými.
+const TILES_VERSION = 2;
 const EXAMPLE_TILES = [
+  { id: 'flashcards', label: 'Flashcards', icon: 'cards', color: 'blue', url: 'https://davix.cz/flashcards/' },
+  { id: 'hry', label: 'Hry', icon: 'gamepad', color: 'purple', url: 'https://davix.cz/games/' },
   { id: 'ukoly', label: 'Úkoly', icon: 'check', color: 'orange' },
   { id: 'kalendar', label: 'Kalendář', icon: 'calendar', color: 'red' },
   { id: 'poznamky', label: 'Poznámky', icon: 'note', color: 'indigo' },
@@ -87,6 +93,8 @@ const EXAMPLE_TILES = [
 const $ = (s, el = document) => el.querySelector(s);
 const root = $('#root'), dlg = $('#dlg');
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// odkaz z dlaždice smí vést jen na https (nic jako javascript:)
+const safeUrl = (u) => { try { const x = new URL(u); return x.protocol === 'https:' ? x.href : ''; } catch { return ''; } };
 let toastTimer;
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.classList.add('show');
@@ -152,8 +160,9 @@ async function loadTiles() {
   const ref = doc(db, 'hub', 'tiles');
   try {
     const snap = await getDoc(ref);
-    if (snap.exists() && Array.isArray(snap.data().tiles)) tiles = snap.data().tiles;
-    else { tiles = EXAMPLE_TILES; await setDoc(ref, { tiles, updated: Date.now() }); }
+    const d = snap.exists() ? snap.data() : null;
+    if (d && Array.isArray(d.tiles) && (d.version || 1) >= TILES_VERSION) tiles = d.tiles;
+    else { tiles = EXAMPLE_TILES; await setDoc(ref, { tiles, version: TILES_VERSION, updated: Date.now() }); }
     rulesMissing = false;
   } catch (e) {
     // bez pravidel ve Firebase databáze hub nepustí; ukážou se aspoň ukázkové dlaždice
@@ -184,15 +193,15 @@ function renderHub() {
     ${rulesMissing ? `<p class="notice">Hub je odemčený, ale ve Firebase ještě chybí pravidla pro hub, takže se dlaždice zatím neukládají. Stačí vložit nová pravidla (návod, krok 2).</p>` : ''}
     <ul class="grid" role="list">
       ${tiles.map((t) => `
-      <li><button class="tile" data-id="${esc(t.id)}">
-        ${icon(t.icon, 'tico')}<span>${esc(t.label)}</span>
-      </button></li>`).join('')}
+      <li>${safeUrl(t.url)
+        ? `<a class="tile" href="${esc(safeUrl(t.url))}" data-id="${esc(t.id)}">${icon(t.icon, 'tico')}<span>${esc(t.label)}</span></a>`
+        : `<button class="tile" data-id="${esc(t.id)}">${icon(t.icon, 'tico')}<span>${esc(t.label)}</span></button>`}</li>`).join('')}
     </ul>
   </main>`;
   // barvy se nastavují přes JS, protože bezpečnostní pravidla stránky (CSP) zakazují vložené styly
   root.querySelectorAll('.tile').forEach((b, i) => {
     const t = tiles[i]; b.style.setProperty('--c', COLORS[t.color] || (/^#[0-9a-f]{3,8}$/i.test(t.color) ? t.color : COLORS.slate)); b.style.setProperty('--i', i);
-    b.onclick = () => { const t = tiles.find((x) => x.id === b.dataset.id); toast(`${t?.label || 'Tahle dlaždice'}: zatím tu nic není.`); };
+    if (b.tagName === 'BUTTON') b.onclick = () => toast(`${t.label || 'Tahle dlaždice'}: zatím tu nic není.`);
   });
   $('#lock').onclick = () => signOut(auth);
   $('#chpw').onclick = openPasswordDialog;

@@ -105,7 +105,7 @@ button { cursor: pointer; }
   --c: #475569;
   width: 100px; height: 100px; border: 0; border-radius: var(--r); padding: 12px 6px 10px;
   display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-  background: var(--c); color: #fff;
+  background: var(--c); color: #fff; text-decoration: none;
   box-shadow: 0 1px 0 rgb(255 255 255 / .18) inset, 0 6px 16px -8px color-mix(in srgb, var(--c) 80%, transparent);
   transition: transform .25s var(--ease), box-shadow .25s var(--ease), filter .2s;
   animation: pop .45s var(--ease) both; animation-delay: calc(var(--i, 0) * 28ms);

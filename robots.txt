@@ -1,2 +1,5 @@
+# Hub se nemá objevit ve vyhledávačích. Zakazuje to značka noindex přímo ve stránce.
+# Procházení tu schválně není zakázané: jinak by vyhledávač tu značku nikdy neviděl
+# a adresu by mohl zařadit i bez obsahu.
 User-agent: *
-Disallow: /
+Allow: /
