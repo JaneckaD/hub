@@ -5,9 +5,9 @@ import {
   initializeApp, initializeAuth, browserSessionPersistence, signInWithEmailAndPassword, signOut, onAuthStateChanged,
   updatePassword, EmailAuthProvider, reauthenticateWithCredential, connectAuthEmulator,
   getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc,
-} from './firebase.js?v=1.3';
+} from './firebase.js?v=1.4';
 
-const VERSION = '1.3'; // při změně uprav i ?v= v index.html (3×) a v importu výše
+const VERSION = '1.4'; // při změně uprav i ?v= v index.html (3×) a v importu výše
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyA3zzb5ZmReIpOK5tq6jfiIC_EF-3IId6A', authDomain: 'flashcards-663fd.firebaseapp.com', projectId: 'flashcards-663fd',
   storageBucket: 'flashcards-663fd.firebasestorage.app', messagingSenderId: '804475670634', appId: '1:804475670634:web:6f851aa49f3909c613ba13',
@@ -160,17 +160,43 @@ function greeting() {
   const h = new Date().getHours();
   return h < 5 ? 'Dobrou noc' : h < 10 ? 'Dobré ráno' : h < 12 ? 'Dobré dopoledne' : h < 18 ? 'Dobré odpoledne' : 'Dobrý večer';
 }
-function renderHub() {
-  document.body.className = 'is-hub';
-  const today = new Date().toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long' });
-  root.innerHTML = `
+const topBar = () => `
   <header class="top">
-    <div class="mark small">hub<span>.</span></div>
+    <a class="mark small" href="#">hub<span>.</span></a>
     <div class="actions">
       <button class="ghost" id="chpw" title="Změnit heslo">${icon('key')}<span>Heslo</span></button>
       <button class="ghost" id="lock" title="Zamknout">${icon('lock')}<span>Zamknout</span></button>
     </div>
-  </header>
+  </header>`;
+function bindTopBar() { $('#lock').onclick = () => signOut(auth); $('#chpw').onclick = openPasswordDialog; }
+
+/* ---------- aplikace uvnitř hubu (otevírají se z dlaždic, adresa #/id) ---------- */
+const VIEWS = { konvertor: () => import('./konvertor.js?v=' + VERSION) };
+const loadedViews = {};
+async function renderView(id) {
+  document.body.className = 'is-hub is-view';
+  root.innerHTML = topBar() + '<main class="hub view" id="view"><div class="boot small"><div class="spin"></div></div></main>';
+  bindTopBar();
+  try {
+    const mod = loadedViews[id] ||= await VIEWS[id]();
+    if (location.hash !== '#/' + id || !auth.currentUser) return;
+    mod.mount($('#view'), { back: () => { location.hash = ''; }, toast, alive: armIdle });
+  } catch (e) {
+    console.error(e);
+    $('#view').innerHTML = '<p class="notice">Tuhle část se nepodařilo načíst. Zkus obnovit stránku.</p>';
+  }
+}
+function route() {
+  if (!auth.currentUser) return;
+  const id = location.hash.replace(/^#\/?/, '');
+  if (VIEWS[id]) renderView(id); else renderHub();
+}
+addEventListener('hashchange', route);
+
+function renderHub() {
+  document.body.className = 'is-hub';
+  const today = new Date().toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long' });
+  root.innerHTML = topBar() + `
   <main class="hub">
     <div class="hello">
       <h1>${greeting()}, Davide.</h1>
@@ -187,10 +213,9 @@ function renderHub() {
   // barvy se nastavují přes JS, protože bezpečnostní pravidla stránky (CSP) zakazují vložené styly
   root.querySelectorAll('.tile').forEach((b, i) => {
     const t = tiles[i]; b.style.setProperty('--c', COLORS[t.color] || (/^#[0-9a-f]{3,8}$/i.test(t.color) ? t.color : COLORS.slate)); b.style.setProperty('--i', i);
-    if (b.tagName === 'BUTTON') b.onclick = () => toast(`${t.label || 'Tahle dlaždice'}: zatím tu nic není.`);
+    if (b.tagName === 'BUTTON') b.onclick = () => { if (VIEWS[t.id]) location.hash = '#/' + t.id; else toast(`${t.label || 'Tahle dlaždice'}: zatím tu nic není.`); };
   });
-  $('#lock').onclick = () => signOut(auth);
-  $('#chpw').onclick = openPasswordDialog;
+  bindTopBar();
 }
 
 /* ---------- změna hesla ---------- */
@@ -237,9 +262,9 @@ onAuthStateChanged(auth, async (user) => {
   if (dlg.open) dlg.close();
   // jiný účet než hub (např. z flashcards) sem nepatří
   if (user && user.email !== HUB_EMAIL) { await signOut(auth); return; }
-  if (!user) { clearTimeout(idleTimer); tiles = EXAMPLE_TILES; renderLogin(wasIn ? 'Hub je zamčený.' : ''); wasIn = false; return; }
+  if (!user) { clearTimeout(idleTimer); tiles = EXAMPLE_TILES; Object.values(loadedViews).forEach((m) => m.reset?.()); renderLogin(wasIn ? 'Hub je zamčený.' : ''); wasIn = false; return; }
   wasIn = true;
   root.innerHTML = '<div class="boot"><div class="spin"></div></div>';
   await loadTiles();
-  renderHub(); armIdle();
+  route(); armIdle();
 });
