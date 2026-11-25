@@ -5,9 +5,9 @@ import {
   initializeApp, initializeAuth, browserSessionPersistence, signInWithEmailAndPassword, signOut, onAuthStateChanged,
   updatePassword, EmailAuthProvider, reauthenticateWithCredential, connectAuthEmulator,
   getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc,
-} from './firebase.js?v=1.4';
+} from './firebase.js?v=1.5';
 
-const VERSION = '1.4'; // při změně uprav i ?v= v index.html (3×) a v importu výše
+const VERSION = '1.5'; // při změně uprav i ?v= v index.html (3×) a v importu výše
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyA3zzb5ZmReIpOK5tq6jfiIC_EF-3IId6A', authDomain: 'flashcards-663fd.firebaseapp.com', projectId: 'flashcards-663fd',
   storageBucket: 'flashcards-663fd.firebasestorage.app', messagingSenderId: '804475670634', appId: '1:804475670634:web:6f851aa49f3909c613ba13',
@@ -47,6 +47,7 @@ const ICONS = {
   link: '<path d="M10 14a4.2 4.2 0 0 0 6 0l3-3a4.2 4.2 0 0 0-6-6l-1 1"/><path d="M14 10a4.2 4.2 0 0 0-6 0l-3 3a4.2 4.2 0 0 0 6 6l1-1"/>',
   cards: '<rect x="7.5" y="6.5" width="13" height="14" rx="2.5"/><path d="M16.5 6.5V5.8a2.3 2.3 0 0 0-2.7-2.2l-8.1 1.5a2.3 2.3 0 0 0-1.8 2.7l2 10.4"/><path d="M11 12h6M11 15.5h4"/>',
   gamepad: '<path d="M7.5 7h9a5 5 0 0 1 4.9 6l-.8 4.2a2.3 2.3 0 0 1-4 1L14.7 16H9.3l-1.9 2.2a2.3 2.3 0 0 1-4-1L2.6 13a5 5 0 0 1 4.9-6z"/><path d="M8 10v4M6 12h4"/><circle cx="15.5" cy="11" r=".9" fill="currentColor"/><circle cx="17.5" cy="13.5" r=".9" fill="currentColor"/>',
+  download: '<path d="M12 4v11.5M7 10.5l5 5 5-5"/><path d="M4.5 15v2.5a2.5 2.5 0 0 0 2.5 2.5h10a2.5 2.5 0 0 0 2.5-2.5V15"/>',
   dumbbell: '<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>',
   convert: '<path d="M4.5 8.5h14l-3.5-3.5M19.5 15.5h-14l3.5 3.5"/>',
   heart: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/>',
@@ -60,19 +61,20 @@ const ICONS = {
 const icon = (name, cls = 'ico') =>
   `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ICONS.folder}</svg>`;
 
-/* ---------- dlaždice: Flashcards, Hry a Web vedou na web, Fitness a Konvertor jsou zatím prázdné ---------- */
+/* ---------- dlaždice: Flashcards, Hry a Web vedou na web, Konvertor a Stahovač jsou aplikace v hubu, Fitness je zatím prázdné ---------- */
 const COLORS = {
   orange: '#ea6a1f', red: '#dc3545', pink: '#d63384', purple: '#7c4ddb', indigo: '#4f46e5', blue: '#2563eb',
   sky: '#0284c7', teal: '#0f8f83', green: '#16a34a', olive: '#5f8f0f', brown: '#9a5b13', slate: '#475569',
 };
 // Když se tenhle seznam změní, zvyš TILES_VERSION: uložené dlaždice v databázi se pak nahradí novými.
-const TILES_VERSION = 3;
+const TILES_VERSION = 4;
 const EXAMPLE_TILES = [
   { id: 'flashcards', label: 'Flashcards', icon: 'cards', color: 'blue', url: 'https://davix.cz/flashcards/' },
   { id: 'hry', label: 'Hry', icon: 'gamepad', color: 'purple', url: 'https://davix.cz/games/' },
   { id: 'web', label: 'Web', icon: 'globe', color: 'sky', url: 'https://davix.cz/' },
   { id: 'fitness', label: 'Fitness', icon: 'dumbbell', color: 'red' },
   { id: 'konvertor', label: 'Konvertor', icon: 'convert', color: 'teal' },
+  { id: 'stahovac', label: 'Stahovač', icon: 'download', color: 'orange' },
 ];
 
 /* ---------- pomocníci ---------- */
@@ -171,7 +173,7 @@ const topBar = () => `
 function bindTopBar() { $('#lock').onclick = () => signOut(auth); $('#chpw').onclick = openPasswordDialog; }
 
 /* ---------- aplikace uvnitř hubu (otevírají se z dlaždic, adresa #/id) ---------- */
-const VIEWS = { konvertor: () => import('./konvertor.js?v=' + VERSION) };
+const VIEWS = { konvertor: () => import('./konvertor.js?v=' + VERSION), stahovac: () => import('./stahovac.js?v=' + VERSION) };
 const loadedViews = {};
 async function renderView(id) {
   document.body.className = 'is-hub is-view';
