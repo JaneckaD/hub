@@ -5,18 +5,17 @@ import {
   initializeApp, initializeAuth, browserSessionPersistence, signInWithEmailAndPassword, signOut, onAuthStateChanged,
   updatePassword, EmailAuthProvider, reauthenticateWithCredential, connectAuthEmulator,
   getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc,
-} from './firebase.js?v=1.1';
+} from './firebase.js?v=1.2';
 
-const VERSION = '1.1'; // při změně uprav i ?v= v index.html (3×) a v importu výše
+const VERSION = '1.2'; // při změně uprav i ?v= v index.html (3×) a v importu výše
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyA3zzb5ZmReIpOK5tq6jfiIC_EF-3IId6A', authDomain: 'flashcards-663fd.firebaseapp.com', projectId: 'flashcards-663fd',
   storageBucket: 'flashcards-663fd.firebasestorage.app', messagingSenderId: '804475670634', appId: '1:804475670634:web:6f851aa49f3909c613ba13',
 };
 // Jediný účet hubu. Stejný e-mail je ve firestore.rules. E-maily se na něj nikam neposílají.
 const HUB_EMAIL = 'hub@hub.davidjanecka.cz';
-// Firebase chce heslo aspoň o 6 znacích, proto se před to, co napíšeš, přidá "hub:".
-// Bezpečnost to nepřidává ani neubírá: o síle rozhoduje jen heslo, které píšeš ty.
-const secret = (pw) => 'hub:' + pw;
+// Heslo jde do Firebase přesně tak, jak ho napíšeš (Firebase chce aspoň 6 znaků).
+const secret = (pw) => pw;
 const MIN_NEW = 8;            // nové heslo musí mít aspoň tolik znaků
 const LOCK_AFTER = 30 * 60e3; // po 30 minutách bez pohybu se hub sám zamkne
 
