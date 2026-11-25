@@ -286,3 +286,18 @@ a.mark { color: inherit; text-decoration: none; }
 .st-hint { margin: 0; color: var(--ink-3); font-size: 13.5px; text-align: center; }
 .st-hint b { color: var(--ink-2); }
 @media (max-width: 560px) { .st-seg { width: 100%; } .st-seg button { flex: 1; justify-content: center; } #stpaste span { display: none; } #stpaste { width: 38px; padding: 0; justify-content: center; } }
+.st-pc { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 12px; padding: 10px 14px; border-radius: 14px; font-size: 14px; color: var(--ink-2); background: var(--card); border: 1px solid var(--line); }
+.st-pc > .ico { width: 18px; height: 18px; flex: none; }
+.st-pc span { flex: 1; min-width: 200px; }
+.st-pc.ok { background: color-mix(in srgb, #16a34a 9%, var(--card)); border-color: color-mix(in srgb, #16a34a 30%, var(--line)); }
+.st-pc.ok > .ico { color: #16a34a; }
+.st-pc .ghost { height: 34px; font-size: 13px; }
+.st-pc .ghost .ico { width: 15px; height: 15px; }
+.st-q { height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); font: inherit; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.st-q[hidden] { display: none; }
+.st-jobs { margin-top: 14px; }
+.st-save { height: 36px; padding: 0 14px; border-radius: 11px; font-size: 14px; }
+.kv-prog.indet i { width: 35% !important; animation: indet 1.1s ease-in-out infinite; }
+@keyframes indet { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+@media (max-width: 560px) { .st-q { flex: 1; } .st-job .kv-ctrl { justify-content: flex-end; } }
+.st-job { animation: none; }
