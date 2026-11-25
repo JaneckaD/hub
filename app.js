@@ -5,9 +5,9 @@ import {
   initializeApp, initializeAuth, browserSessionPersistence, signInWithEmailAndPassword, signOut, onAuthStateChanged,
   updatePassword, EmailAuthProvider, reauthenticateWithCredential, connectAuthEmulator,
   getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc,
-} from './firebase.js?v=1.6';
+} from './firebase.js?v=1.7';
 
-const VERSION = '1.6'; // při změně uprav i ?v= v index.html (3×) a v importu výše
+const VERSION = '1.7'; // při změně uprav i ?v= v index.html (3×) a v importu výše
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyA3zzb5ZmReIpOK5tq6jfiIC_EF-3IId6A', authDomain: 'flashcards-663fd.firebaseapp.com', projectId: 'flashcards-663fd',
   storageBucket: 'flashcards-663fd.firebasestorage.app', messagingSenderId: '804475670634', appId: '1:804475670634:web:6f851aa49f3909c613ba13',
@@ -61,20 +61,19 @@ const ICONS = {
 const icon = (name, cls = 'ico') =>
   `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ICONS.folder}</svg>`;
 
-/* ---------- dlaždice: Flashcards, Hry a Web vedou na web, Konvertor a Stahovač jsou aplikace v hubu, Fitness je zatím prázdné ---------- */
+/* ---------- dlaždice: Flashcards, Hry a Web vedou na web, Konvertor je aplikace v hubu, Fitness je zatím prázdné ---------- */
 const COLORS = {
   orange: '#ea6a1f', red: '#dc3545', pink: '#d63384', purple: '#7c4ddb', indigo: '#4f46e5', blue: '#2563eb',
   sky: '#0284c7', teal: '#0f8f83', green: '#16a34a', olive: '#5f8f0f', brown: '#9a5b13', slate: '#475569',
 };
 // Když se tenhle seznam změní, zvyš TILES_VERSION: uložené dlaždice v databázi se pak nahradí novými.
-const TILES_VERSION = 4;
+const TILES_VERSION = 5;
 const EXAMPLE_TILES = [
   { id: 'flashcards', label: 'Flashcards', icon: 'cards', color: 'blue', url: 'https://davix.cz/flashcards/' },
   { id: 'hry', label: 'Hry', icon: 'gamepad', color: 'purple', url: 'https://davix.cz/games/' },
   { id: 'web', label: 'Web', icon: 'globe', color: 'sky', url: 'https://davix.cz/' },
   { id: 'fitness', label: 'Fitness', icon: 'dumbbell', color: 'red' },
   { id: 'konvertor', label: 'Konvertor', icon: 'convert', color: 'teal' },
-  { id: 'stahovac', label: 'Stahovač', icon: 'download', color: 'orange' },
 ];
 
 /* ---------- pomocníci ---------- */
@@ -173,7 +172,7 @@ const topBar = () => `
 function bindTopBar() { $('#lock').onclick = () => signOut(auth); $('#chpw').onclick = openPasswordDialog; }
 
 /* ---------- aplikace uvnitř hubu (otevírají se z dlaždic, adresa #/id) ---------- */
-const VIEWS = { konvertor: () => import('./konvertor.js?v=' + VERSION), stahovac: () => import('./stahovac.js?v=' + VERSION) };
+const VIEWS = { konvertor: () => import('./konvertor.js?v=' + VERSION) };
 const loadedViews = {};
 async function renderView(id) {
   document.body.className = 'is-hub is-view';
