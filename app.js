@@ -5,9 +5,9 @@ import {
   initializeApp, initializeAuth, browserSessionPersistence, signInWithEmailAndPassword, signOut, onAuthStateChanged,
   updatePassword, EmailAuthProvider, reauthenticateWithCredential, connectAuthEmulator,
   getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc,
-} from './firebase.js?v=1.7';
+} from './firebase.js?v=1.8';
 
-const VERSION = '1.7'; // při změně uprav i ?v= v index.html (3×) a v importu výše
+const VERSION = '1.8'; // při změně uprav i ?v= v index.html (3×) a v importu výše
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyA3zzb5ZmReIpOK5tq6jfiIC_EF-3IId6A', authDomain: 'flashcards-663fd.firebaseapp.com', projectId: 'flashcards-663fd',
   storageBucket: 'flashcards-663fd.firebasestorage.app', messagingSenderId: '804475670634', appId: '1:804475670634:web:6f851aa49f3909c613ba13',
@@ -67,13 +67,14 @@ const COLORS = {
   sky: '#0284c7', teal: '#0f8f83', green: '#16a34a', olive: '#5f8f0f', brown: '#9a5b13', slate: '#475569',
 };
 // Když se tenhle seznam změní, zvyš TILES_VERSION: uložené dlaždice v databázi se pak nahradí novými.
-const TILES_VERSION = 5;
+const TILES_VERSION = 6;
 const EXAMPLE_TILES = [
   { id: 'flashcards', label: 'Flashcards', icon: 'cards', color: 'blue', url: 'https://davix.cz/flashcards/' },
   { id: 'hry', label: 'Hry', icon: 'gamepad', color: 'purple', url: 'https://davix.cz/games/' },
   { id: 'web', label: 'Web', icon: 'globe', color: 'sky', url: 'https://davix.cz/' },
   { id: 'fitness', label: 'Fitness', icon: 'dumbbell', color: 'red' },
   { id: 'konvertor', label: 'Konvertor', icon: 'convert', color: 'teal' },
+  { id: 'finance', label: 'Finance', icon: 'wallet', color: 'green' },
 ];
 
 /* ---------- pomocníci ---------- */
@@ -172,7 +173,10 @@ const topBar = () => `
 function bindTopBar() { $('#lock').onclick = () => signOut(auth); $('#chpw').onclick = openPasswordDialog; }
 
 /* ---------- aplikace uvnitř hubu (otevírají se z dlaždic, adresa #/id) ---------- */
-const VIEWS = { konvertor: () => import('./konvertor.js?v=' + VERSION) };
+const VIEWS = {
+  konvertor: () => import('./konvertor.js?v=' + VERSION),
+  finance: () => import('./finance.js?v=' + VERSION),
+};
 const loadedViews = {};
 async function renderView(id) {
   document.body.className = 'is-hub is-view';
@@ -181,7 +185,12 @@ async function renderView(id) {
   try {
     const mod = loadedViews[id] ||= await VIEWS[id]();
     if (location.hash !== '#/' + id || !auth.currentUser) return;
-    mod.mount($('#view'), { back: () => { location.hash = ''; }, toast, alive: armIdle });
+    mod.mount($('#view'), {
+      back: () => { location.hash = ''; }, toast, alive: armIdle,
+      // soukromá data aplikací v hubu (dokument hub/<id>, chráněný stejnými pravidly jako dlaždice)
+      loadDoc: async (docId) => { const s = await getDoc(doc(db, 'hub', docId)); return s.exists() ? s.data() : null; },
+      saveDoc: (docId, value) => setDoc(doc(db, 'hub', docId), value),
+    });
   } catch (e) {
     console.error(e);
     $('#view').innerHTML = '<p class="notice">Tuhle část se nepodařilo načíst. Zkus obnovit stránku.</p>';
