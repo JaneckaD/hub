@@ -10,6 +10,7 @@ Soukromý osobní hub Davida Janečky na https://hub.davix.cz (statický web na 
 - **Verze:** při každé změně zvýš `VERSION` v `app.js` a stejné `?v=` v `index.html` (3×) a v importu `firebase.js`.
 - **Testování:** Firebase emulátor (auth 9099, firestore 8080) a stránka na localhostu s `?emu`.
 - **Konvertor** (`#/konvertor`, soubor `konvertor.js`): převádí soubory přímo v prohlížeči, nic se nikam neposílá.
+- **Finance** (`#/finance`, soubor `finance.js`): příjmy a výdaje po kategoriích, měsíční plán, pravidelné platby a graf za 6 měsíců. Data v dokumentu `hub/finance`.
   Knihovny jsou ve složce `lib/` (sestaví je `scripts/libs.mjs`): ffmpeg.wasm (video, zvuk, GIF/BMP/TIFF/ICO), pdf.js a pdf-lib (PDF),
   heic-to (fotky z iPhonu), mammoth (Word), marked (Markdown), SheetJS (tabulky), fflate (ZIP). Načítají se až když jsou potřeba.
   Bezpečnostní pravidla stránky (CSP v `index.html`) kvůli tomu povolují `wasm-unsafe-eval` a `blob:`; knihovny nesmí potřebovat `eval`.
